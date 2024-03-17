@@ -24,7 +24,7 @@ const upload = multer({ storage });
 
 // Serve the HTML form for file upload
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  res.send("working");
 });
 
 // Handle file upload
