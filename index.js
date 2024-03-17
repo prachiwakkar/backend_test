@@ -28,7 +28,7 @@ app.get('/', (req, res) => {
 });
 
 // Handle file upload
-app.post('/api/uploads', upload.single('file'), (req, res) => {
+app.post('/fileupload', upload.single('file'), (req, res) => {
   if (req.file) {
     res.send('File uploaded successfully!');
   } else {
