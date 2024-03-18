@@ -1,23 +1,20 @@
+require('dotenv').config(); // Load environment variables from .env file
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
-
+const AWS = require('aws-sdk');
 
 const app = express();
 const port = 5000;
 
-app.use("/uploads",express.static('uploads'));
-
+// AWS S3 configuration
+const s3 = new AWS.S3({
+  accessKeyId:process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey:process.env.AWS_SECRET_ACCESS_KEY,
+});
 
 // Set storage for uploaded files
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, 'uploads/');
-  },
-  filename: function (req, file, cb) {
-    cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
-  },
-});
+const storage = multer.memoryStorage();
 
 // Initialize multer middleware
 const upload = multer({ storage });
@@ -29,11 +26,25 @@ app.get('/', (req, res) => {
 
 // Handle file upload
 app.post('/fileupload', upload.single('file'), (req, res) => {
-  if (req.file) {
-    res.send('File uploaded successfully!');
-  } else {
-    res.status(400).send('No file uploaded!');
+  if (!req.file) {
+    return res.status(400).send('No file uploaded!');
   }
+
+  // Upload file to S3 bucket
+  const params = {
+    Bucket: 'prachi-store-1',
+    Key: `${Date.now()}_${req.file.originalname}`,
+    Body: req.file.buffer
+  };
+
+  s3.upload(params, (err, data) => {
+    if (err) {
+      console.error('Error uploading file to S3:', err);
+      return res.status(500).send('Error uploading file to S3');
+    }
+    console.log('File uploaded to S3:', data.Location);
+    res.send('File uploaded successfully and stored in S3!');
+  });
 });
 
 // Start the server
